@@ -370,7 +370,7 @@ ProcDecl                        (.  string name; string label; Scope currentScop
                                       Procedures should only be entered via
                                       a Call instruction.
                                     */
-				    currentScope.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, openScopes.Count, -1, -1));
+				    currentScope.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, openScopes.Count, -1));
                                     openScopes.Push(new Scope());
                                     currentScope = openScopes.Peek();
                                     Console.WriteLine("-Procedure Name:"+name+"\n");
@@ -646,9 +646,9 @@ ConstDecl                       (.
 = "const"                        
 Ident<out name>
 ":="
-( Factor<out type>                (.
+Factor<out type>                (.
                                     sym = new Symbol(name, (int)TastierKind.Const, (int)type, openScopes.Count-1, currentScope.Count(s => s.Item2 == (int)TastierKind.Const || s.Item2 ==
-                        				    (int)TastierKind.Var), -1);
+                        				    (int)TastierKind.Var));
                         				    currentScope.Push(sym);
                         				    if (sym.Item4 == 0) {
                         				      program.Add(new Instruction("", "StoG " + (sym.Item5+3)));                                    
@@ -672,10 +672,10 @@ VarDecl<bool external>          (.
   Ident<out name>               (.
                                     Symbol sym;
                                     if (external) {
-                                      sym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0, -1);
+                                      sym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0);
                                       externalDeclarations.Push(sym);                                   
                                     } else {
-                                      sym = new Symbol(name, (int)TastierKind.Var, (int)type, openScopes.Count-1, currentScope.Count(s => s.Item2 == (int)TastierKind.Var || s.Item2 == (int)TastierKind.Const), -1); 
+                                      sym = new Symbol(name, (int)TastierKind.Var, (int)type, openScopes.Count-1, currentScope.Count(s => s.Item2 == (int)TastierKind.Var || s.Item2 == (int)TastierKind.Const)); 
                                       currentScope.Push(sym);
                                     }
                                	    Console.WriteLine("-Variable Name: " + name + "\n Type: " + type + "\n " +
@@ -684,10 +684,10 @@ VarDecl<bool external>          (.
                                 .)
   { ',' Ident<out name>         (.
                                     if (external) {
-                                      sym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0, -1);
+                                      sym = new Symbol(name, (int)TastierKind.Var, (int)type, 0, 0);
                                       externalDeclarations.Push(sym);                                   
                                     } else {
-                                      sym = new Symbol(name, (int)TastierKind.Var, (int)type, openScopes.Count-1, currentScope.Count(s => s.Item2 == (int)TastierKind.Var || s.Item2 == (int)TastierKind.Const), -1); 
+                                      sym = new Symbol(name, (int)TastierKind.Var, (int)type, openScopes.Count-1, currentScope.Count(s => s.Item2 == (int)TastierKind.Var || s.Item2 == (int)TastierKind.Const)); 
                                       currentScope.Push(sym);
                                     }
                                	    Console.WriteLine("-Variable Name: " + name + "\n Type: " + type + "\n " +
@@ -700,7 +700,7 @@ ExternDecl                      (.  string name; bool external = true; Scope cur
 = "external"
   ( VarDecl<external>
   | "procedure" Ident<out name> ';'
-                                (.  externalDeclarations.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, 1, -1, -1)); .)
+                                (.  externalDeclarations.Push(new Symbol(name, (int)TastierKind.Proc, (int)TastierType.Undefined, 1, -1)); .)
   ) .
 
 END Tastier.
