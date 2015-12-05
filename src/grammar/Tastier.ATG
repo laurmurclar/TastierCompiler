@@ -473,6 +473,22 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     program.Add(new Instruction("", "FJmp " + openLabels.Peek()));
                                 .)
       Expr<out type1>           (.
+                                    if (type1 != (TastierType)sym.Item3) {
+                                      SemErr("incompatible types");
+                                    }
+                                    if (sym.Item4 == 0) {
+                                      if (isExternal) {
+                                        program.Add(new Instruction("", "StoG " + sym.Item1));
+                                        // if the symbol is external, we also store it by name. The linker will resolve the name to an address.
+                                      } else {
+                                        program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
+                                      }
+                                    }
+                                    else {
+                                      int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
+                                      program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
+                                    }
+
                                     Instruction startOfElse = new Instruction(openLabels.Pop(), "Nop");
                                     /*
                                        If we got into the "if", we need to
@@ -484,7 +500,25 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     program.Add(startOfElse);
                                 .)
       ':'
-      Expr<out type2>           (.  program.Add(new Instruction(openLabels.Pop(), "Nop")); .)
+      Expr<out type2>           (. 
+                                    if (type2 != (TastierType)sym.Item3) {
+                                      SemErr("incompatible types");
+                                    }
+                                    if (sym.Item4 == 0) {
+                                      if (isExternal) {
+                                        program.Add(new Instruction("", "StoG " + sym.Item1));
+                                        // if the symbol is external, we also store it by name. The linker will resolve the name to an address.
+                                      } else {
+                                        program.Add(new Instruction("", "StoG " + (sym.Item5+3)));
+                                      }
+                                    }
+                                    else {
+                                      int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
+                                      program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
+                                    }
+ 
+                                    program.Add(new Instruction(openLabels.Pop(), "Nop")); 
+                                .)
     | ';'
     )
                                 (.
