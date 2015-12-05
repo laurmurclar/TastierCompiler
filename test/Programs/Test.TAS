@@ -3,12 +3,14 @@
 // number, the sum of all integers up to that number
 
 program Test { 
+  const a := 30;
   const i := 512;
+  const k := 20;
 
   void Main() {
     int j;
-    j := 10;
-    write i;  
+    j := a > i? k : a;    
+    write j;  
   }
 }
 

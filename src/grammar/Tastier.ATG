@@ -283,7 +283,7 @@ Expr<out TastierType type>      (.  TastierType type1; Instruction inst; .)
   [ RelOp<out inst>
     SimExpr<out type1>          (.
                                     if (type != type1) {
-                                      SemErr("incompatible types");
+                                      SemErr("incompatible typesP");
                                     }
                                     else {
                                       program.Add(inst);
@@ -471,10 +471,11 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     }
                                     openLabels.Push(generateLabel());
                                     program.Add(new Instruction("", "FJmp " + openLabels.Peek()));
+                                    TastierType type1, type2;
                                 .)
       Expr<out type1>           (.
                                     if (type1 != (TastierType)sym.Item3) {
-                                      SemErr("incompatible types");
+                                      SemErr("incompatible typesF");
                                     }
                                     if (sym.Item4 == 0) {
                                       if (isExternal) {
@@ -500,9 +501,9 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     program.Add(startOfElse);
                                 .)
       ':'
-      Expr<out type2>           (. 
+      Expr<out type2>';'        (. 
                                     if (type2 != (TastierType)sym.Item3) {
-                                      SemErr("incompatible types");
+                                      SemErr("incompatible typesT");
                                     }
                                     if (sym.Item4 == 0) {
                                       if (isExternal) {
@@ -519,11 +520,9 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
  
                                     program.Add(new Instruction(openLabels.Pop(), "Nop")); 
                                 .)
-    | ';'
-    )
-                                (.
+    | ';'                       (.
                                     if (type != (TastierType)sym.Item3) {
-                                      SemErr("incompatible types");
+                                      SemErr("incompatible typesO");
                                     }
                                     if (sym.Item4 == 0) {
                                       if (isExternal) {
@@ -538,6 +537,7 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                       program.Add(new Instruction("", "Sto " + lexicalLevelDifference + " " + sym.Item5));
                                     }
                                 .)
+    )
   | '(' ')' ';'                 (.
                                     if ((TastierKind)sym.Item2 != TastierKind.Proc) {
                                       SemErr("object is not a procedure");
