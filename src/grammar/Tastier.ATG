@@ -283,7 +283,7 @@ Expr<out TastierType type>      (.  TastierType type1; Instruction inst; .)
   [ RelOp<out inst>
     SimExpr<out type1>          (.
                                     if (type != type1) {
-                                      SemErr("incompatible typesP");
+                                      SemErr("incompatible types");
                                     }
                                     else {
                                       program.Add(inst);
@@ -475,7 +475,7 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                 .)
       Expr<out type1>           (.
                                     if (type1 != (TastierType)sym.Item3) {
-                                      SemErr("incompatible typesF");
+                                      SemErr("incompatible types");
                                     }
                                     if (sym.Item4 == 0) {
                                       if (isExternal) {
@@ -503,7 +503,7 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
       ':'
       Expr<out type2>';'        (. 
                                     if (type2 != (TastierType)sym.Item3) {
-                                      SemErr("incompatible typesT");
+                                      SemErr("incompatible types");
                                     }
                                     if (sym.Item4 == 0) {
                                       if (isExternal) {
@@ -522,7 +522,7 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                 .)
     | ';'                       (.
                                     if (type != (TastierType)sym.Item3) {
-                                      SemErr("incompatible typesO");
+                                      SemErr("incompatible types");
                                     }
                                     if (sym.Item4 == 0) {
                                       if (isExternal) {
