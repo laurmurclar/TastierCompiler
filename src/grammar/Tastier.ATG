@@ -587,6 +587,31 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     program.Add(new Instruction(openLabels.Pop(), "Nop")); // put the loop end label here
                                 .)
 
+| "for"                          //for (init; terminating; update){ }
+  '(' Stat                      (. 
+                                    string termCheck = generateLabel();
+                                    program.Add(new Instruction(termCheck, "Nop"));
+                                .)
+      Expr<out type> ';'        (.
+                                    string loopEndLabel = generateLabel();
+                                    program.Add(new Instruction("", "FJmp " + loopEndLabel);
+                                    string loopStartLabel = generateLabel(); //we need to jump over the update if the condition isn't false
+                                    program.Add(new Instruction("", "Jmp " + loopStartLabel)); 
+                                    string updateLabel = generateLabel();
+                                    program.Add(new Instruction(updateLabel, "Nop"));
+                                .)
+      Stat                      (.
+                                    program.Add(new Instruction("", "Jmp " + termCheck))
+                                    program.Add(new Instruction(loopStartLabel, "Nop"));
+                                .)
+  ')'
+  '{'
+      {Stat}
+  '}'                           (. 
+                                    program.Add(new Instruction("", "Jmp " + updateLabel));
+                                    program.Add(new Instruction(loopEndLabel, "Nop"));
+                                .)
+
 | "read"
   Ident<out name> ';'           (.
                                     sym = lookup(openScopes, name);
