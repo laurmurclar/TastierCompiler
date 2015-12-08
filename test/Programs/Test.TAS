@@ -9,8 +9,10 @@ program Test {
 
   void Main() {
     int j;
-    j := a > i? k : a;    
-    write j;  
+    for (j:= 0; j < 10; j := j+1;)
+    {
+      write j;
+    }
   }
 }
 

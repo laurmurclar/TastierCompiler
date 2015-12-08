@@ -587,21 +587,25 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     program.Add(new Instruction(openLabels.Pop(), "Nop")); // put the loop end label here
                                 .)
 
-| "for"                          //for (init; terminating; update){ }
+| "for"                            
   '(' Stat                      (. 
+                                    //for (init; terminating; update){ }
                                     string termCheck = generateLabel();
                                     program.Add(new Instruction(termCheck, "Nop"));
                                 .)
       Expr<out type> ';'        (.
+                                    if ((TastierType)type != TastierType.Boolean) {
+                                      SemErr("boolean type expected");
+                                    }
                                     string loopEndLabel = generateLabel();
-                                    program.Add(new Instruction("", "FJmp " + loopEndLabel);
+                                    program.Add(new Instruction("", "FJmp " + loopEndLabel));
                                     string loopStartLabel = generateLabel(); //we need to jump over the update if the condition isn't false
                                     program.Add(new Instruction("", "Jmp " + loopStartLabel)); 
                                     string updateLabel = generateLabel();
                                     program.Add(new Instruction(updateLabel, "Nop"));
                                 .)
       Stat                      (.
-                                    program.Add(new Instruction("", "Jmp " + termCheck))
+                                    program.Add(new Instruction("", "Jmp " + termCheck));
                                     program.Add(new Instruction(loopStartLabel, "Nop"));
                                 .)
   ')'
