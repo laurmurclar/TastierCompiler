@@ -24,6 +24,7 @@ COMPILER Tastier
     While,
     Read,
     Write,
+    Switch
   };
 /*
   You'll notice some type aliases, such as the one just below, are commented
@@ -633,6 +634,75 @@ Stat<out stype>                 (.  TastierType type; StatementType stype; strin
                                     program.Add(new Instruction("", "Jmp " + updateLabel));
                                     program.Add(new Instruction(loopEndLabel, "Nop"));
                                 .)
+| "switch" '('Expr<out type>')' (. 
+                                    stype = StatementType.Switch;
+                                    string endSwitch = generateLabel();
+                                    bool fallThrough = true;
+                                .)
+  '{'
+    (
+      "case" Expr<out type1> ':' (.
+                                    if (type != type1){
+                                      SemErr("switch expression type does not match case type");
+                                    }
+                                    program.Add(new Instruction("", "Equ"));
+                                    openLabels.Push(generateLabel());
+                                    program.Add(new Instruction("", "FJmp " + openLabels.Peek()));
+                                .)
+      {Stat}
+
+    | "default" ':'
+      {Stat}
+    )
+    ["break;"                   (.
+                                    fallThrough = false;
+                                .)
+    ]               
+                                (.
+                                    Instruction startOfNextCase = new Instruction(openLabels.Pop(), "Nop");
+                                    /*
+                                       If there was a "break", we shouldn't go into the remaining cases.
+                                       We should jump to the end.
+                                    */
+                                    if (!fallThrough){
+                                      openLabels.Push(generateLabel());
+                                      program.Add(new Instruction("", "Jmp " + openLabels.Peek()));
+                                    }
+                                    program.Add(startOfNextCase);
+                                .)
+
+    {      
+      "case" Expr<out type1> ':' (.
+                                    if (type != type1){
+                                      SemErr("switch expression type does not match case type");
+                                    }
+                                    program.Add(new Instruction("", "Equ"));
+                                    openLabels.Push(generateLabel());
+                                    program.Add(new Instruction("", "FJmp " + openLabels.Peek()));
+                                .)
+      {Stat}
+
+    | "default" ':'
+      {Stat}
+    )
+    ["break;"                   (.
+                                    fallThrough = false;
+                                .)
+    ]               
+                                (.
+                                    Instruction startOfNextCase = new Instruction(openLabels.Pop(), "Nop");
+                                    /*
+                                       If there was a "break", we shouldn't go into the remaining cases.
+                                       We should jump to the end.
+                                    */
+                                    if (!fallThrough){
+                                      openLabels.Push(generateLabel());
+                                      program.Add(new Instruction("", "Jmp " + openLabels.Peek()));
+                                    }
+                                    program.Add(startOfNextCase);
+                                .)
+  }
+  '}'
 
 | "read"
   Ident<out name> ';'           (.
