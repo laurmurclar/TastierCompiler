@@ -16,6 +16,15 @@ COMPILER Tastier
     Proc
   };
 
+  enum StatementType : int {
+    Assign,
+    ProcCall,
+    If,
+    For,
+    While,
+    Read,
+    Write,
+  };
 /*
   You'll notice some type aliases, such as the one just below, are commented
   out. This is because C# only allows using-alias-directives outside of a
@@ -448,7 +457,7 @@ SimExpr<out TastierType type>   (.  TastierType type1; Instruction inst; .)
 
 /*------------------------------------------------------------------------*/
 
-Stat                            (.  TastierType type; string name; Symbol sym; bool external = false; bool isExternal = false; .)
+Stat<out stype>                 (.  TastierType type; StatementType stype; string name; Symbol sym; bool external = false; bool isExternal = false; .)
 
 = Ident<out name>               (.
                                     sym = lookup(openScopes, name);
@@ -459,11 +468,12 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     if (sym == null) {
                                       SemErr("reference to undefined variable " + name);
                                     }
-                                .)
+                                 .)
   ( ":="                         (.
                                     if ((TastierKind)sym.Item2 != TastierKind.Var) {
                                       SemErr("cannot assign to non-variable");
                                     }
+                                    stype = StatementType.Assign;
                                 .)
     Expr<out type> 
     ( '?'                       (. if ((TastierType)type != TastierType.Boolean) {
@@ -539,6 +549,7 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                 .)
     )
   | '(' ')' ';'                 (.
+                                    stype = StatementType.ProcCall;
                                     if ((TastierKind)sym.Item2 != TastierKind.Proc) {
                                       SemErr("object is not a procedure");
                                     }
@@ -552,6 +563,7 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
 
 | "if"
   '(' Expr<out type> ')'        (.
+                                    stype = StatementType.If;
                                     if ((TastierType)type != TastierType.Boolean) {
                                       SemErr("boolean type expected");
                                     }
@@ -573,7 +585,9 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
         Stat
       ]                         (.  program.Add(new Instruction(openLabels.Pop(), "Nop")); .)
 
-| "while"                       (.  string loopStartLabel = generateLabel();
+| "while"                       (.  
+                                    stype = StatementType.While;
+                                    string loopStartLabel = generateLabel();
                                     openLabels.Push(generateLabel()); //second label is for the loop end
                                     program.Add(new Instruction(loopStartLabel, "Nop"));
                                 .)
@@ -588,14 +602,21 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                 .)
 
 | "for"                            
-  '(' Stat                      (. 
+  '(' Stat<out iType>           (. 
                                     //for (init; update; terminating){ }
+                                    stype = StatementType.For;
+                                    if (iType != StatementType.Assign || iType != StatementType.ProcCall) {
+                                        SemErr("invalid statement type in initial action")
+                                    }
                                     string start = generateLabel();
                                     program.Add(new Instruction("", "Jmp " + start));
                                     string updateLabel = generateLabel();
                                     program.Add(new Instruction(updateLabel, "Nop"));
                                 .)
-      Stat                      (.
+      Stat<out uType>           (.
+                                    if (uType != StatementType.Assign || uType != StatementType.ProcCall) {
+                                        SemErr("invalid statement type in update action")
+                                    }
                                     program.Add(new Instruction(start, "Nop"));
                                 .)
       Expr<out type>            (.
@@ -615,6 +636,7 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
 
 | "read"
   Ident<out name> ';'           (.
+                                    stype = StatementType.Read;
                                     sym = lookup(openScopes, name);
                                     if (sym == null) {
                                       sym = _lookup(externalDeclarations, name);
@@ -649,6 +671,7 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
 
 | "write"
   Expr<out type> ';'            (.
+                                    stype = StatementType.Write;
                                     if (type != TastierType.Integer) {
                                       SemErr("integer type expected");
                                     }
