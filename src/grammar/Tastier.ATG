@@ -784,7 +784,7 @@ Type<out TastierType type>
 
 /*------------------------------------------------------------------------*/
 
-StructDecl                      (. string structName, name; TastierType fieldType; Scope currentScope = openScopes.Peek(); Symbol sym; .)
+StructDecl                        (. string structName, name; TastierType fieldType; Scope currentScope = openScopes.Peek(); Symbol sym; .)
 = "struct"
   Ident<out structName>
   (                            
@@ -816,8 +816,8 @@ StructDecl                      (. string structName, name; TastierType fieldTyp
                                       currentScope.Count(s => s.Item2 == (int)TastierKind.Struct));
                                     currentScope.Push(sym);
                                     // give it fields
-                                    foreach (KeyValuePair<string, TastierType> kvp in defstructs[structName]) {
-                                      sym = new Symbol(name + "." + kvp.Key, (int)TastierKind.Var, (int)kvp.Value, openScopes.Count-1, 
+                                    foreach (KeyValuePair<string, TastierType> pair in defstructs[structName]) {
+                                      sym = new Symbol(name + "." + pair.Key, (int)TastierKind.Var, (int)pair.Value, openScopes.Count-1, 
                                         currentScope.Count(s => s.Item2 == (int)TastierKind.Var || s.Item2 == (int)TastierKind.Const)); 
                                       currentScope.Push(sym);
                                     }
