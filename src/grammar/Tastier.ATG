@@ -78,6 +78,9 @@ COMPILER Tastier
                       Item4, -1 if procedure
 */
 
+  // A list of all the struct types defined. Can only have fields which are variables for the moment
+  Dictionary<string, Dictionary<string, TastierType>> defstructs = new Dictionary<string, Dictionary<string, TastierType>>();
+
   class Scope : Stack<Symbol> {}
 
 /*
@@ -258,7 +261,7 @@ letter = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".
   tab = '\t'.
 
 TOKENS
-  ident  = letter {letter | digit}.
+  ident  = letter {letter | digit | '.'}.
   number = digit {digit}.
 
 COMMENTS FROM "/*" TO "*/" NESTED
@@ -709,7 +712,7 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                 .)
   }
   ';'
-  
+| StructDecl
 | '{' { Stat | VarDecl<external> | ConstDecl } '}' .
 
 /*------------------------------------------------------------------------*/
@@ -781,33 +784,47 @@ Type<out TastierType type>
 
 /*------------------------------------------------------------------------*/
 
-StructDecl                      (. string structName; string fieldName; TastierType fieldType; Scope currentScope = openScopes.Peek(); Symbol sym; .)
+StructDecl                      (. string structName, name; TastierType fieldType; Scope currentScope = openScopes.Peek(); Symbol sym; .)
 = "struct"
-  Ident<out structName>         (. 
-                                  sym = new Symbol(structName, (int)TastierKind.Struct, (int)TastierType.Undefined, openScopes.Count-1, 
-                                    currentScope.Count(s => s.Item2 == (int)TastierKind.Struct));
-                                  currentScope.Push(sym);
-                                  Console.WriteLine("Struct: " + structName);
-                                .)
-  '{'
-      Type<out fieldType> 
-      Ident<out fieldName>';'   (.
-                                  // Kind is struct so that we know this is the "template", not a variable
-                                  sym = new Symbol((structName + '.' + fieldName), (int)TastierKind.Struct, (int)fieldType, openScopes.Count-1, 
-                                    currentScope.Count(s => (s.Item2 == (int)TastierKind.Var) || (s.Item2 == (int)TastierKind.Const)));
-                                  currentScope.Push(sym);
-                                  Console.WriteLine("-." + fieldName);
-                                .)
+  Ident<out structName>
+  (                            
+      '{'                         (. 
+                                    defstructs.Add(structName, new Dictionary<string, TastierType>());
+                                    Console.WriteLine("Struct: " + structName);
+                                  .)
+        Type<out fieldType> 
+        Ident<out name>';'        (.
+                                    defstructs[structName].Add(name, fieldType);
+                                    Console.WriteLine("--> " + name);
+                                  .)
 
-      { Type<out fieldType> 
-        Ident<out fieldName>';'   (.
-                                  // Kind is struct so that we know this is the "template", not a variable
-                                  sym = new Symbol((structName + '.' + fieldName), (int)TastierKind.Struct, (int)fieldType, openScopes.Count-1, 
-                                    currentScope.Count(s => (s.Item2 == (int)TastierKind.Var) || (s.Item2 == (int)TastierKind.Const)));
-                                  currentScope.Push(sym);
-                                  Console.WriteLine("-." + fieldName);
+        { Type<out fieldType> 
+          Ident<out name>';'      (.
+                                    defstructs[structName].Add(name, fieldType);
+                                    Console.WriteLine("--> " + name);
+                                  .)
+        } 
+      '}'
+
+  | Ident<out name>               (.
+                                    // check if struct is defined]
+                                    if (!(defstructs.ContainsKey(structName))) {
+                                      SemErr("Cannot instantiate undefined struct");
+                                    }
+                                    // create struct instance
+                                    sym = new Symbol(name, (int)TastierKind.Struct, (int)TastierType.Undefined, openScopes.Count-1, 
+                                      currentScope.Count(s => s.Item2 == (int)TastierKind.Struct));
+                                    currentScope.Push(sym);
+                                    // give it fields
+                                    foreach (KeyValuePair<string, TastierType> kvp in defstructs[structName]) {
+                                      sym = new Symbol(name + "." + kvp.Key, (int)TastierKind.Var, (int)kvp.Value, openScopes.Count-1, 
+                                        currentScope.Count(s => s.Item2 == (int)TastierKind.Var || s.Item2 == (int)TastierKind.Const)); 
+                                      currentScope.Push(sym);
+                                    }
+                                    Console.WriteLine("Instantiated struct " + structName + " as " + name);
                                 .)
-      } '}'.
+    ';'
+  ).
 
 /*------------------------------------------------------------------------*/
 

@@ -1,5 +1,6 @@
 program Test {
- struct Book {
+ struct Comic {
+   int issue;
    int pages;
   }    
 
@@ -16,5 +17,12 @@ program Test {
       default:
         write i, 3;
     }
+
+    struct Comic wicdiv;
+    wicdiv.pages := 27;
+    wicdiv.issue := 1;
+
+    write wicdiv.issue;
+    write wicdiv.pages;
   }
 }
