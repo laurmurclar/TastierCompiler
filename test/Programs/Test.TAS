@@ -1,8 +1,12 @@
 program Test {
+ struct Book {
+   int pages;
+  }    
+
   void Main() {
     int i;
     read i;
-
+    
     switch (i) {
       case 0:
       case 1:
@@ -13,5 +17,4 @@ program Test {
         write i, 3;
     }
   }
-
 }

@@ -13,7 +13,8 @@ COMPILER Tastier
   enum TastierKind : int {  // kinds of symbol
     Const,
     Var,
-    Proc
+    Proc,
+    Struct
   };
 
 /*
@@ -75,7 +76,6 @@ COMPILER Tastier
     * Symbol.Item4 -> stack frame pointer
     * Symbol.Item5 -> variable's address in the stack frame pointed to by
                       Item4, -1 if procedure
-    * Symbol.Item6 -> length (for strings)
 */
 
   class Scope : Stack<Symbol> {}
@@ -720,7 +720,7 @@ Tastier                         (.  string name; bool external = false; .)
                                     openScopes.Push(new Scope());
                                 .)
   '{'
-  { ConstDecl | VarDecl<external> | ProcDecl | ExternDecl }
+  { ConstDecl | VarDecl<external> | ProcDecl | ExternDecl | StructDecl }
   '}'                           (.
                                     if (openScopes.Peek().Count == 0) {
                                       Warn("Warning: Program " + name + " is empty ");
@@ -733,9 +733,11 @@ Tastier                         (.  string name; bool external = false; .)
                                       } else if (s.Item2 == (int)TastierKind.Proc) {
                                         header.Add(new Instruction("", ".proc " + s.Item1));
                                       } else if (s.Item2 == (int)TastierKind.Const) {
-                        				        header.Add(new Instruction("", ".const " + ((int)s.Item3) + " " + s.Item1)); 
-                        				      } else {
-                                        SemErr("global item " + s.Item1 + " has no defined type");
+                        				        header.Add(new Instruction("", ".const " + ((int)s.Item3) + " " + s.Item1));
+                        				      } else if (s.Item2 == (int)TastierKind.Struct) {
+                                        header.Add(new Instruction("", ".struct " + s.Item1));
+                                      }else {
+                                        SemErr("global item " + s.Item1 + " has no defined kind");
                                       }
                                     }
                                     foreach (Symbol s in externalDeclarations) {
@@ -745,8 +747,10 @@ Tastier                         (.  string name; bool external = false; .)
                                         header.Add(new Instruction("", ".external proc " + s.Item1));
                                       } else if (s.Item2 == (int)TastierKind.Const) {
 				                                header.Add(new Instruction("", ".external const " + s.Item1));
+                                      } else if (s.Item2 == (int)TastierKind.Struct) {
+                                        header.Add(new Instruction("", ".external struct " + s.Item1));
                                       } else {
-                                        SemErr("external item " + s.Item1 + " has no defined type");
+                                        SemErr("external item " + s.Item1 + " has no defined kind");
                                       }
                                     }
                                     header.AddRange(program);
@@ -774,6 +778,36 @@ Type<out TastierType type>
  ( "int"                        (.  type = TastierType.Integer; .)
  | "bool"                       (.  type = TastierType.Boolean; .)
  ).
+
+/*------------------------------------------------------------------------*/
+
+StructDecl                      (. string structName; string fieldName; TastierType fieldType; Scope currentScope = openScopes.Peek(); Symbol sym; .)
+= "struct"
+  Ident<out structName>         (. 
+                                  sym = new Symbol(structName, (int)TastierKind.Struct, (int)TastierType.Undefined, openScopes.Count-1, 
+                                    currentScope.Count(s => s.Item2 == (int)TastierKind.Struct));
+                                  currentScope.Push(sym);
+                                  Console.WriteLine("Struct: " + structName);
+                                .)
+  '{'
+      Type<out fieldType> 
+      Ident<out fieldName>';'   (.
+                                  // Kind is struct so that we know this is the "template", not a variable
+                                  sym = new Symbol((structName + '.' + fieldName), (int)TastierKind.Struct, (int)fieldType, openScopes.Count-1, 
+                                    currentScope.Count(s => (s.Item2 == (int)TastierKind.Var) || (s.Item2 == (int)TastierKind.Const)));
+                                  currentScope.Push(sym);
+                                  Console.WriteLine("-." + fieldName);
+                                .)
+
+      { Type<out fieldType> 
+        Ident<out fieldName>';'   (.
+                                  // Kind is struct so that we know this is the "template", not a variable
+                                  sym = new Symbol((structName + '.' + fieldName), (int)TastierKind.Struct, (int)fieldType, openScopes.Count-1, 
+                                    currentScope.Count(s => (s.Item2 == (int)TastierKind.Var) || (s.Item2 == (int)TastierKind.Const)));
+                                  currentScope.Push(sym);
+                                  Console.WriteLine("-." + fieldName);
+                                .)
+      } '}'.
 
 /*------------------------------------------------------------------------*/
 
