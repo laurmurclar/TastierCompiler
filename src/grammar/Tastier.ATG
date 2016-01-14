@@ -612,6 +612,74 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     program.Add(new Instruction("", "Jmp " + updateLabel));
                                     program.Add(new Instruction(loopEndLabel, "Nop"));
                                 .)
+| "switch" '(' Ident<out name> ')' (. string switchEndLabel = generateLabel(); openLabels.Push(generateLabel());
+                                      sym = lookup(openScopes, name);
+                                      if (sym == null) {
+                                        sym = _lookup(externalDeclarations, name);
+                                        isExternal = true;
+                                      }
+
+                                      if (sym == null) {
+                                        SemErr("reference to undefined variable " + name);
+                                      }
+                                      else {
+                                        type = (TastierType)sym.Item3;
+                                        if ((TastierKind)sym.Item2 == TastierKind.Var || (TastierKind)sym.Item2 == TastierKind.Const) {
+                                          if (sym.Item4 == 0) {
+                                              if (isExternal) {
+                                                program.Add(new Instruction("", "LoadG " + sym.Item1));
+                                                // if the symbol is external, we load it by name. The linker will resolve the name to an address.
+                                              } else {
+                                                program.Add(new Instruction("", "LoadG " + (sym.Item5+3)));
+                                              }
+                                          } else {
+                                              int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
+                                              program.Add(new Instruction("", "Load " + lexicalLevelDifference + " " + sym.Item5));
+                                          }
+                                        } else SemErr("variable expected");
+                                      }
+                                    .)
+  '{'
+      { "case"                    (.
+                                    program.Add(new Instruction(openLabels.Pop(), "Nop"));
+                                    if (sym.Item4 == 0) {
+                                      if (isExternal) {
+                                        program.Add(new Instruction("", "LoadG " + sym.Item1));
+                                        // if the symbol is external, we load it by name. The linker will resolve the name to an address.
+                                      } else {
+                                        program.Add(new Instruction("", "LoadG " + (sym.Item5+3)));
+                                      }
+                                    } else {
+                                        int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
+                                        program.Add(new Instruction("", "Load " + lexicalLevelDifference + " " + sym.Item5));
+                                    }
+                                  .)
+        Expr<out type> ':'       (.
+                                    if ((TastierType)sym.Item3 != type){
+                                      SemErr("switch expression type does not match case type");
+                                    }
+                                    program.Add(new Instruction("", "Equ"));
+                                    openLabels.Push(generateLabel());
+                                    program.Add(new Instruction("", "FJmp " + openLabels.Peek()));
+                                  .)
+        {Stat}
+        ["break;"                 (.
+                                    program.Add(new Instruction("", "Jmp " + switchEndLabel));
+                                  .)
+        ]
+      }
+                                  (.
+                                    program.Add(new Instruction(openLabels.Pop(), "Nop")); 
+                                    /* A default will follow at least one case, and every case pushes a label for the next case. 
+                                     * We want the last case to Fjmp to default.
+                                     */
+                                  .)
+    "default" ':'
+    {Stat}
+    ["break;"]                      // No point jumping to the end here, since its directly before the end
+  '}'                               (.
+                                      program.Add(new Instruction(switchEndLabel, "Nop"));
+                                    .)            
 
 | "read"
   Ident<out name> ';'           (.
