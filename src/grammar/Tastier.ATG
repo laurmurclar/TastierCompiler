@@ -656,7 +656,7 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                   .)
         Expr<out type> ':'       (.
                                     if ((TastierType)sym.Item3 != type){
-                                      SemErr("switch expression type does not match case type");
+                                     SemErr("switch expression type does not match case type");
                                     }
                                     program.Add(new Instruction("", "Equ"));
                                     openLabels.Push(generateLabel());
@@ -680,7 +680,6 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
   '}'                               (.
                                       program.Add(new Instruction(switchEndLabel, "Nop"));
                                     .)            
-
 | "read"
   Ident<out name> ';'           (.
                                     sym = lookup(openScopes, name);

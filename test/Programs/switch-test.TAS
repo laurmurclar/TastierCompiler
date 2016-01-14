@@ -1,0 +1,16 @@
+program Test {
+  void Main() {
+    read i;
+
+    switch (i) {
+      case 0:
+      case 1:
+      case 2:
+        write 2;
+        break;
+      default:
+        write i;
+    }
+  }
+
+}
