@@ -18,11 +18,26 @@ program Test {
         write i, 3;
     }
 
+    struct Employee {
+      int id;
+      int salary;
+      int projno;
+    }
+    
+    struct Employee hansolo;
+    hansolo.id := 33;
+    hansolo.salary := 700;
+    hansolo.projno := 8;
+
     struct Comic wicdiv;
     wicdiv.pages := 27;
     wicdiv.issue := 1;
 
     write wicdiv.issue;
     write wicdiv.pages;
-  }
+    write hansolo.id;
+    write hansolo.salary;
+    write hansolo.projno;
+    write 70000;
+}
 }
