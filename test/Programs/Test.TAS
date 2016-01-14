@@ -10,7 +10,7 @@ program Test {
         write 2;
         break;
       default:
-        write i;
+        write i, 3;
     }
   }
 
