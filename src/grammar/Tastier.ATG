@@ -616,35 +616,20 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     program.Add(new Instruction("", "Jmp " + updateLabel));
                                     program.Add(new Instruction(loopEndLabel, "Nop"));
                                 .)
-| "switch" '(' Ident<out name> ')' (. string switchEndLabel = generateLabel();
+| "switch" '(' Expr<out type> ')' (. string switchEndLabel = generateLabel();
                                       string nextCaseLabel = generateLabel(); // marks the start of the next case
                                       string fallThruLabel = generateLabel(); // skips the equality check to allow fall-through
                                       bool fallThru = true;
-
-                                      sym = lookup(openScopes, name);
-                                      if (sym == null) {
-                                        sym = _lookup(externalDeclarations, name);
-                                        isExternal = true;
-                                      }
+                                      TastierType type1;
                                     .)
   '{'
       { "case"                    (.
                                     fallThru = true;
                                     program.Add(new Instruction(nextCaseLabel, "Nop"));
-                                    if (sym.Item4 == 0) {
-                                      if (isExternal) {
-                                        program.Add(new Instruction("", "LoadG " + sym.Item1));
-                                        // if the symbol is external, we load it by name. The linker will resolve the name to an address.
-                                      } else {
-                                        program.Add(new Instruction("", "LoadG " + (sym.Item5+3)));
-                                      }
-                                    } else {
-                                        int lexicalLevelDifference = Math.Abs(openScopes.Count - sym.Item4)-1;
-                                        program.Add(new Instruction("", "Load " + lexicalLevelDifference + " " + sym.Item5));
-                                    }
+                                    program.Add(new Instruction("", "Dup"));
                                   .)
-        Expr<out type> ':'       (.
-                                    if ((TastierType)sym.Item3 != type){
+        Expr<out type1> ':'       (.
+                                    if (type1 != type){
                                      SemErr("switch expression type does not match case type");
                                     }
                                     program.Add(new Instruction("", "Equ"));
