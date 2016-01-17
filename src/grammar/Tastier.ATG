@@ -357,6 +357,7 @@ MulOp<out Instruction inst>
 =                               (.  inst = new Instruction("", "Mul"); .)
   ( '*'
   | '/'                         (.  inst = new Instruction("", "Div"); .)
+  | '%'                         (.  inst = new Instruction("", "Mod"); .)
   ).
 
 /*------------------------------------------------------------------------*/
@@ -649,7 +650,6 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
         ["break;"                 (.
                                     program.Add(new Instruction("", "Jmp " + switchEndLabel));
                                   .)
-        ]
       }
                                   (.
                                     program.Add(new Instruction(openLabels.Pop(), "Nop")); 
