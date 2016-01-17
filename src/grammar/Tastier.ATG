@@ -662,6 +662,7 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
     ["break;"]                      // No point jumping to the end here, since its directly before the end
   '}'                               (.
                                       program.Add(new Instruction(switchEndLabel, "Nop"));
+                                      program.Add(new Instruction("", "Pop"));
                                     .)            
 | "read"
   Ident<out name> ';'           (.
