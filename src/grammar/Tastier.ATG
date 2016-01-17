@@ -616,7 +616,11 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     program.Add(new Instruction("", "Jmp " + updateLabel));
                                     program.Add(new Instruction(loopEndLabel, "Nop"));
                                 .)
-| "switch" '(' Ident<out name> ')' (. string switchEndLabel = generateLabel(); openLabels.Push(generateLabel());
+| "switch" '(' Ident<out name> ')' (. string switchEndLabel = generateLabel();
+                                      string nextCaseLabel = generateLabel(); // marks the start of the next case
+                                      string fallThruLabel = generateLabel(); // skips the equality check to allow fall-through
+                                      bool fallThru = true;
+
                                       sym = lookup(openScopes, name);
                                       if (sym == null) {
                                         sym = _lookup(externalDeclarations, name);
@@ -625,7 +629,8 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                     .)
   '{'
       { "case"                    (.
-                                    program.Add(new Instruction(openLabels.Pop(), "Nop"));
+                                    fallThru = true;
+                                    program.Add(new Instruction(nextCaseLabel, "Nop"));
                                     if (sym.Item4 == 0) {
                                       if (isExternal) {
                                         program.Add(new Instruction("", "LoadG " + sym.Item1));
@@ -643,18 +648,28 @@ Stat                            (.  TastierType type; string name; Symbol sym; b
                                      SemErr("switch expression type does not match case type");
                                     }
                                     program.Add(new Instruction("", "Equ"));
-                                    openLabels.Push(generateLabel());
-                                    program.Add(new Instruction("", "FJmp " + openLabels.Peek()));
+                                    nextCaseLabel = generateLabel();
+                                    program.Add(new Instruction("", "FJmp " + nextCaseLabel));
+                                    program.Add(new Instruction(fallThruLabel, "Nop"));
                                   .)
         {Stat}
         ["break;"                 (.
-                                    program.Add(new Instruction("", "Jmp " + switchEndLabel));
+                                    fallThru = false;
+                                  .)
+        ]                         (.
+                                    if (fallThru) {
+                                      fallThruLabel = generateLabel();
+                                      program.Add(new Instruction("", "Jmp " + fallThruLabel));
+                                    } else program.Add(new Instruction("", "Jmp " + switchEndLabel));
                                   .)
       }
                                   (.
-                                    program.Add(new Instruction(openLabels.Pop(), "Nop")); 
-                                    /* A default will follow at least one case, and every case pushes a label for the next case. 
-                                     * We want the last case to Fjmp to default.
+                                    if (fallThru) program.Add(new Instruction(fallThruLabel, "Nop"));
+                                    program.Add(new Instruction(nextCaseLabel, "Nop"));
+                                    /* Every case pushes a label for the start of next case. 
+                                     * We want the last case to Fjmp to default. If there was no 'break' before the
+                                     * 'default' a fall-through label and jump will have been generated, which we also
+                                     * want to lead to 'default'.
                                      */
                                   .)
     "default" ':'
